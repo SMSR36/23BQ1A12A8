@@ -544,3 +544,140 @@ Log("backend","error","service","Worker processing failed")
 
 Log("backend","fatal","service","Queue unavailable")
 ```
+# Stage 5
+
+## Problem Statement
+
+When an HR administrator clicks "Notify All", the system must send notifications to approximately 50,000 students through both in-app notifications and email notifications.
+
+Processing all notifications synchronously would overload the application and cause significant delays.
+
+---
+
+## Proposed Solution
+
+I would use an asynchronous event-driven architecture with message queues and worker services.
+
+### Architecture
+
+```text
+HR Portal
+    |
+    v
+Notification Service
+    |
+    v
+Message Queue
+    |
+    +----------------+
+    |                |
+    v                v
+Email Workers    In-App Workers
+    |                |
+    v                v
+Email Service    Notification Database
+```
+
+---
+
+## Workflow
+
+### Step 1
+
+HR clicks "Notify All".
+
+### Step 2
+
+Notification Service creates a notification event.
+
+### Step 3
+
+The event is pushed into a Message Queue.
+
+### Step 4
+
+Multiple worker instances consume messages concurrently.
+
+### Step 5
+
+Email Workers send emails.
+
+### Step 6
+
+In-App Workers store notifications for students.
+
+### Step 7
+
+Students receive notifications through both channels.
+
+---
+
+## Why This Approach Is Better
+
+### Scalability
+
+Multiple workers can process notifications in parallel.
+
+### Reliability
+
+Notifications remain in the queue even if a worker crashes.
+
+### Faster User Experience
+
+HR receives an immediate response instead of waiting for 50,000 notifications to finish processing.
+
+### Fault Isolation
+
+Failure in email delivery does not affect in-app notification delivery.
+
+---
+
+## Batch Processing
+
+Instead of sending 50,000 notifications individually from one process:
+
+- Divide users into batches.
+- Process batches concurrently.
+- Scale workers horizontally when load increases.
+
+Example:
+
+```text
+50,000 Students
+      |
+      v
+500 Batches
+      |
+      v
+100 Students Per Batch
+```
+
+---
+
+## Monitoring
+
+Important metrics:
+
+- Queue Length
+- Notification Processing Rate
+- Failed Deliveries
+- Email Success Rate
+- Worker Health Status
+
+---
+
+## Logging Middleware Usage
+
+```text
+Log("backend","info","service","Notify All request received")
+
+Log("backend","info","service","50,000 notification jobs queued")
+
+Log("backend","info","service","Batch processing started")
+
+Log("backend","warn","service","Email delivery delay detected")
+
+Log("backend","error","service","Notification batch failed")
+
+Log("backend","fatal","service","Notification delivery system unavailable")
+```
