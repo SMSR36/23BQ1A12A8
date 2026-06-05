@@ -681,3 +681,182 @@ Log("backend","error","service","Notification batch failed")
 
 Log("backend","fatal","service","Notification delivery system unavailable")
 ```
+# Stage 6
+
+## Problem Statement
+
+The product manager has introduced notification priorities.
+
+Different notification types have different importance levels:
+
+| Notification Type | Weight |
+|------------------|----------|
+| Placement | 10 |
+| Result | 8 |
+| Event | 5 |
+
+The system must display only the 10 most important notifications while also considering recency.
+
+---
+
+## Proposed Approach
+
+Each notification will receive a Priority Score.
+
+### Priority Formula
+
+Priority Score = Notification Weight + Recency Score
+
+Where:
+
+- Placement = 10
+- Result = 8
+- Event = 5
+
+More recent notifications receive higher recency scores.
+
+---
+
+## Processing Flow
+
+### Step 1
+
+Fetch notifications from the Notification API.
+
+### Step 2
+
+Assign weights based on notification type.
+
+### Step 3
+
+Calculate a priority score.
+
+### Step 4
+
+Sort notifications by:
+
+1. Priority Score (Descending)
+2. Timestamp (Descending)
+
+### Step 5
+
+Return only the Top 10 notifications.
+
+---
+
+## Pseudocode
+
+```python
+weights = {
+    "Placement": 10,
+    "Result": 8,
+    "Event": 5
+}
+
+for notification in notifications:
+    notification["priority"] = weights.get(
+        notification["type"],
+        0
+    )
+
+sorted_notifications = sorted(
+    notifications,
+    key=lambda n: (
+        n["priority"],
+        n["timestamp"]
+    ),
+    reverse=True
+)
+
+top_notifications = sorted_notifications[:10]
+```
+
+---
+
+## Time Complexity
+
+Fetching notifications:
+
+O(n)
+
+Sorting notifications:
+
+O(n log n)
+
+Selecting top 10:
+
+O(10)
+
+Overall Complexity:
+
+O(n log n)
+
+---
+
+## Scalability Improvements
+
+### Caching
+
+Store frequently accessed top notifications in cache.
+
+### Background Processing
+
+Precompute notification priorities periodically.
+
+### Pagination
+
+Load additional notifications only when requested.
+
+### Database Indexing
+
+Create indexes on:
+
+- notificationType
+- createdAt
+
+to improve retrieval performance.
+
+---
+
+## Final Architecture
+
+```text
+Notification API
+        |
+        v
+Database
+        |
+        v
+Priority Engine
+        |
+        v
+Sorting Service
+        |
+        v
+Top 10 Notifications
+        |
+        v
+Student Dashboard
+```
+
+---
+
+## Logging Middleware Usage
+
+```text
+Log("backend","info","service","Notifications fetched from API")
+
+Log("backend","info","service","Priority calculation completed")
+
+Log("backend","info","service","Top 10 notifications generated")
+
+Log("backend","warn","service","Large notification dataset detected")
+
+Log("backend","error","service","Priority calculation failed")
+
+Log("backend","fatal","service","Notification ranking service unavailable")
+```
+
+## Conclusion
+
+The proposed solution combines database optimization, indexing, queue-based processing, asynchronous delivery, and priority-based ranking to build a scalable and reliable campus notification platform capable of serving thousands of students efficiently.
