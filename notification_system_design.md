@@ -439,3 +439,108 @@ Log("backend","error","db","Missing index detected")
 
 Log("backend","fatal","db","Database performance degradation")
 ```
+# Stage 4
+
+## Problem Statement
+
+The notification system may experience extremely high traffic when thousands of notifications are generated simultaneously. Directly processing every notification request can overload the application server and increase response times.
+
+---
+
+## Proposed Solution
+
+I would introduce a Message Queue between notification producers and notification consumers.
+
+### Architecture
+
+```text
+Client
+   |
+   v
+Notification API
+   |
+   v
+Message Queue
+   |
+   v
+Notification Workers
+   |
+   v
+Database / Email Service / Push Service
+```
+
+---
+
+## How It Works
+
+### Step 1
+
+The client sends a notification request to the Notification API.
+
+### Step 2
+
+Instead of processing the notification immediately, the API pushes the request into a Message Queue.
+
+### Step 3
+
+Worker services continuously consume messages from the queue.
+
+### Step 4
+
+Workers process notifications asynchronously and deliver them through the required channels.
+
+---
+
+## Benefits
+
+### Improved Scalability
+
+The queue can handle sudden traffic spikes without overwhelming the application.
+
+### Faster Response Time
+
+The API responds quickly after placing the request into the queue.
+
+### Reliability
+
+Notifications remain in the queue even if workers temporarily fail.
+
+### Load Distribution
+
+Multiple worker instances can process notifications in parallel.
+
+---
+
+## Recommended Technologies
+
+- RabbitMQ
+- Apache Kafka
+- AWS SQS
+
+For this use case, RabbitMQ would be sufficient due to its simplicity and reliability.
+
+---
+
+## Fault Tolerance
+
+If a worker crashes:
+
+1. Notification remains in queue.
+2. Another worker processes it.
+3. Message loss is minimized.
+
+---
+
+## Logging Middleware Usage
+
+```text
+Log("backend","info","service","Notification added to queue")
+
+Log("backend","info","service","Worker processing notification")
+
+Log("backend","warn","service","Queue length increasing")
+
+Log("backend","error","service","Worker processing failed")
+
+Log("backend","fatal","service","Queue unavailable")
+```
