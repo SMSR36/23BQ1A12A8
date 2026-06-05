@@ -3,7 +3,7 @@ import requests
 
 ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")
 
-LOG_API_URL = "http://20.244.56.144/evaluation-service/logs"
+LOG_API_URL = "http://4.224.186.213/evaluation-service/logs"
 
 def Log(stack, level, package, message):
 
