@@ -311,3 +311,131 @@ Log("backend","error","db","Database query timeout")
 
 Log("backend","fatal","db","Database unavailable")
 ```
+# Stage 3
+
+## Query Analysis
+
+Given Query:
+
+```sql
+SELECT * FROM notifications
+WHERE studentID = 1042
+AND isRead = false
+ORDER BY createdAt DESC;
+```
+
+---
+
+## Is The Query Accurate?
+
+Yes.
+
+The query correctly retrieves all unread notifications belonging to a specific student and returns them in descending order of creation time.
+
+---
+
+## Why Can The Query Become Slow?
+
+As the notifications table grows to millions of records, the database may need to scan a large portion of the table before filtering records.
+
+Potential causes:
+
+1. Full table scans
+2. Missing indexes
+3. Large dataset size
+4. Expensive sorting operations
+
+---
+
+## Recommended Indexing Strategy
+
+Instead of indexing every column, a composite index should be created based on the query pattern.
+
+```sql
+CREATE INDEX idx_notifications_student_read_created
+ON notifications(studentID, isRead, createdAt DESC);
+```
+
+### Benefits
+
+- Faster filtering by studentID
+- Faster filtering by isRead
+- Faster ordering by createdAt
+- Reduced disk reads
+
+---
+
+## Why Not Create Indexes On Every Column?
+
+Although indexes improve read performance, excessive indexing introduces several problems:
+
+### Increased Storage Usage
+
+Each index consumes additional disk space.
+
+### Slower Insert Operations
+
+Every insert must update all related indexes.
+
+### Slower Update Operations
+
+Updating indexed columns requires index maintenance.
+
+### Higher Maintenance Cost
+
+Large numbers of indexes increase database overhead.
+
+Therefore, indexes should only be created for frequently queried columns.
+
+---
+
+## notificationType: ENUM vs VARCHAR
+
+### ENUM
+
+Advantages:
+
+- Better storage efficiency
+- Restricts values to valid notification types
+- Prevents invalid data
+
+Disadvantages:
+
+- Schema changes required when adding new notification types
+
+### VARCHAR
+
+Advantages:
+
+- Flexible
+- Easier to extend
+
+Disadvantages:
+
+- Allows invalid values unless validated
+
+---
+
+## Recommendation
+
+I would use ENUM because the notification types are limited and predefined:
+
+- Placement
+- Event
+- Result
+
+This improves data consistency and reduces storage overhead.
+
+---
+
+## Logging Middleware Usage
+
+```text
+Log("backend","info","db","Notification query executed")
+
+Log("backend","warn","db","Query execution time increasing")
+
+Log("backend","error","db","Missing index detected")
+
+Log("backend","fatal","db","Database performance degradation")
+```
